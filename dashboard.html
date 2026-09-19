@@ -35,15 +35,63 @@
             </div>
         </header>
         <section id="dashboardWorkspace" class="dashboard-workspace">
-            <div class="empty-state">
-                <i class="bi bi-bar-chart-line"></i>
-                <h2>Nenhuma análise configurada</h2>
-                <p>Importe um conjunto de dados para começar a montar seu dashboard.</p>
+            <div id="dashboardEmptyState" class="empty-state d-none">
+                <i class="bi bi-database-add"></i>
+                <h2>Nenhum conjunto disponível</h2>
+                <p>Importe um arquivo CSV ou Excel para selecionar os dados que serão analisados.</p>
                 <a href="datasets.html" class="btn btn-primary-custom">Importar dados</a>
+            </div>
+
+            <div id="datasetSelectionPanel" class="dataset-selection-panel d-none">
+                <section class="dashboard-card dataset-selector-card">
+                    <div class="dataset-selector-copy">
+                        <span class="selection-step">ETAPA 1</span>
+                        <h2>Escolha o conjunto de dados</h2>
+                        <p>Selecione qual arquivo será usado nas próximas análises do Dashboard.</p>
+                    </div>
+
+                    <div class="dataset-selector-control">
+                        <label class="form-label" for="dashboardDatasetSelect">Conjunto de dados</label>
+                        <select class="form-select" id="dashboardDatasetSelect">
+                            <option value="">Selecione um conjunto</option>
+                        </select>
+                    </div>
+                </section>
+
+                <section id="selectedDatasetSummary" class="selected-dataset-summary d-none" aria-live="polite">
+                    <div class="selected-dataset-heading">
+                        <div class="selected-dataset-icon">
+                            <i class="bi bi-file-earmark-spreadsheet"></i>
+                        </div>
+                        <div>
+                            <span>CONJUNTO SELECIONADO</span>
+                            <h3 id="selectedDatasetName"></h3>
+                            <p id="selectedDatasetDescription"></p>
+                        </div>
+                        <span class="status-badge selected-status">
+                            <i class="bi bi-check-circle-fill"></i>
+                            Pronto para analisar
+                        </span>
+                    </div>
+
+                    <div class="selected-dataset-meta">
+                        <div><small>Registros</small><strong id="selectedDatasetRows">0</strong></div>
+                        <div><small>Colunas</small><strong id="selectedDatasetColumns">0</strong></div>
+                        <div><small>Formato</small><strong id="selectedDatasetFormat">—</strong></div>
+                        <div><small>Atualizado</small><strong id="selectedDatasetUpdated">—</strong></div>
+                    </div>
+
+                    <div class="next-step-note">
+                        <i class="bi bi-info-circle"></i>
+                        <span>Na próxima etapa, você poderá escolher as colunas que deseja analisar.</span>
+                    </div>
+                </section>
             </div>
         </section>
     </main>
 </div>
+<script src="js/storage.js"></script>
+<script src="js/dashboard.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>
