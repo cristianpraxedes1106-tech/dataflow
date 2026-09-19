@@ -34,6 +34,13 @@
                 <p>Visualize os principais indicadores dos seus conjuntos de dados.</p>
             </div>
         </header>
+        <div class="dashboard-progress" aria-label="Etapas do Dashboard">
+            <span class="done"><i class="bi bi-check"></i> Dados</span>
+            <i class="bi bi-chevron-right"></i>
+            <span class="done"><i class="bi bi-check"></i> Colunas</span>
+            <i class="bi bi-chevron-right"></i>
+            <span><i class="bi bi-bar-chart"></i> Indicadores e gráficos</span>
+        </div>
         <section id="dashboardWorkspace" class="dashboard-workspace">
             <div id="dashboardEmptyState" class="empty-state d-none">
                 <i class="bi bi-database-add"></i>
@@ -135,6 +142,9 @@
                             <strong>Configuração salva</strong>
                             <span id="columnSelectionSummary"></span>
                         </div>
+                        <button id="viewChartsButton" class="btn btn-primary-custom btn-sm" type="button">
+                            Ver indicadores e gráficos <i class="bi bi-arrow-down"></i>
+                        </button>
                     </div>
                 </section>
 
@@ -161,14 +171,15 @@
                                 <span class="selection-step">ETAPA 4</span>
                                 <h2 id="chartTitle">Visualização por categoria</h2>
                             </div>
-                            <label class="chart-type-control">
-                                <span>Tipo de gráfico</span>
-                                <select id="chartTypeSelect" class="form-select">
-                                    <option value="bar">Barras</option>
-                                    <option value="line">Linha</option>
-                                    <option value="pie">Pizza</option>
-                                </select>
-                            </label>
+                        </div>
+                        <div class="chart-type-gallery" id="chartTypeGallery" aria-label="Tipos de gráfico">
+                            <button type="button" class="active" data-chart="bar"><i class="bi bi-bar-chart-fill"></i><span>Barras</span></button>
+                            <button type="button" data-chart="horizontal"><i class="bi bi-bar-chart-steps"></i><span>Horizontal</span></button>
+                            <button type="button" data-chart="line"><i class="bi bi-graph-up"></i><span>Linhas</span></button>
+                            <button type="button" data-chart="area"><i class="bi bi-graph-up-arrow"></i><span>Área</span></button>
+                            <button type="button" data-chart="pie"><i class="bi bi-pie-chart-fill"></i><span>Pizza</span></button>
+                            <button type="button" data-chart="doughnut"><i class="bi bi-circle"></i><span>Rosca</span></button>
+                            <button type="button" data-chart="bar3d"><i class="bi bi-box-fill"></i><span>Barras 3D</span></button>
                         </div>
                         <div id="analyticsChart" class="analytics-chart"></div>
                         <p id="chartFootnote" class="chart-footnote"></p>

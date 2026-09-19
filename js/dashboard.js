@@ -32,12 +32,10 @@ function initDashboardDatasetSelection() {
     `;
 
     const savedId = localStorage.getItem(DASHBOARD_DATASET_KEY);
-    const savedDataset = datasets.find(dataset => String(dataset.id) === savedId);
-
-    if (savedDataset) {
-        select.value = String(savedDataset.id);
-        renderSelectedDataset(savedDataset);
-    }
+    const selectedDataset = datasets.find(dataset => String(dataset.id) === savedId) || datasets[0];
+    select.value = String(selectedDataset.id);
+    localStorage.setItem(DASHBOARD_DATASET_KEY, String(selectedDataset.id));
+    renderSelectedDataset(selectedDataset);
 
     select.addEventListener("change", () => {
         const dataset = datasets.find(item => String(item.id) === select.value);
@@ -106,8 +104,8 @@ function renderColumnSelection(dataset) {
     const validCategory = availableCategories.some(column => column.name === config.category);
     const validMetric = numericColumns.some(column => column.name === config.metric);
 
-    categorySelect.value = validCategory ? config.category : "";
-    metricSelect.value = validMetric ? config.metric : "";
+    categorySelect.value = validCategory ? config.category : (availableCategories[0]?.name || "");
+    metricSelect.value = validMetric ? config.metric : (numericColumns[0]?.name || "");
     metricSelect.disabled = numericColumns.length === 0;
 
     if (!numericColumns.length) {
@@ -122,6 +120,10 @@ function renderColumnSelection(dataset) {
     metricSelect.onchange = saveActiveColumnSelection;
 
     panel.classList.remove("d-none");
+    if ((!validCategory || !validMetric) && categorySelect.value && metricSelect.value) {
+        saveActiveColumnSelection();
+        return;
+    }
     updateColumnSelectionState();
 }
 
@@ -205,6 +207,8 @@ function updateColumnSelectionState() {
         setDashboardText("columnSelectionSummary", `${metric} será analisado por ${category}.`);
         ready.classList.remove("d-none");
         renderDashboardAnalytics(category, metric);
+        const viewButton = document.getElementById("viewChartsButton");
+        if (viewButton) viewButton.onclick = () => document.getElementById("dashboardAnalytics")?.scrollIntoView({ behavior: "smooth", block: "start" });
     } else {
         status.classList.remove("ready");
         status.innerHTML = '<i class="bi bi-circle"></i> Selecione as duas colunas';
@@ -242,9 +246,17 @@ function renderDashboardAnalytics(category, metric) {
     setDashboardText("chartTitle", `${metric} por ${category}`);
 
     const grouped = aggregateDashboardRows(rows, category, metric);
-    const chartType = document.getElementById("chartTypeSelect");
-    chartType.onchange = () => renderAnalyticsChart(grouped, chartType.value, isCurrency);
-    renderAnalyticsChart(grouped, chartType.value, isCurrency);
+    const gallery = document.getElementById("chartTypeGallery");
+    const buttons = [...gallery.querySelectorAll("button[data-chart]")];
+    const activeButton = buttons.find(button => button.classList.contains("active")) || buttons[0];
+    buttons.forEach(button => {
+        button.onclick = () => {
+            buttons.forEach(item => item.classList.remove("active"));
+            button.classList.add("active");
+            renderAnalyticsChart(grouped, button.dataset.chart, isCurrency);
+        };
+    });
+    renderAnalyticsChart(grouped, activeButton.dataset.chart, isCurrency);
     panel.classList.remove("d-none");
 }
 
@@ -285,11 +297,16 @@ function renderAnalyticsChart(data, type, isCurrency) {
     }
 
     chart.className = `analytics-chart chart-${type}`;
-    chart.innerHTML = type === "line"
-        ? buildLineChart(data, isCurrency)
-        : type === "pie"
-            ? buildPieChart(data, isCurrency)
-            : buildBarChart(data, isCurrency);
+    const builders = {
+        bar: () => buildBarChart(data, isCurrency),
+        horizontal: () => buildHorizontalChart(data, isCurrency),
+        line: () => buildLineChart(data, isCurrency, false),
+        area: () => buildLineChart(data, isCurrency, true),
+        pie: () => buildPieChart(data, isCurrency, false),
+        doughnut: () => buildPieChart(data, isCurrency, true),
+        bar3d: () => build3DBarChart(data, isCurrency)
+    };
+    chart.innerHTML = (builders[type] || builders.bar)();
 
     if (footnote) {
         footnote.textContent = data.length === 12
@@ -308,7 +325,13 @@ function buildBarChart(data, isCurrency) {
         </div>`).join("")}</div>`;
 }
 
-function buildLineChart(data, isCurrency) {
+function buildHorizontalChart(data, isCurrency) {
+    return `<div class="horizontal-chart">${data.map((item,index)=>`
+        <div class="horizontal-column"><strong>${formatDashboardMetric(item.value,isCurrency)}</strong><div class="horizontal-bar" style="height:${Math.max(8,Math.abs(item.value)/Math.max(...data.map(x=>Math.abs(x.value)),1)*220)}px;--bar-index:${index}"></div><span title="${escapeDashboardHTML(item.label)}">${escapeDashboardHTML(item.label)}</span></div>
+    `).join("")}</div>`;
+}
+
+function buildLineChart(data, isCurrency, area = false) {
     const width = 900, height = 300, padding = 34;
     const max = Math.max(...data.map(item => item.value), 1);
     const min = Math.min(...data.map(item => item.value), 0);
@@ -318,14 +341,16 @@ function buildLineChart(data, isCurrency) {
         const y = height - padding - ((item.value - min) / span) * (height - padding * 2);
         return { ...item, x, y };
     });
-    return `<div class="line-chart-wrap"><svg viewBox="0 0 ${width} ${height}" role="img" aria-label="Gráfico de linha">
+    const areaPoints = `${padding},${height-padding} ${points.map(p=>`${p.x},${p.y}`).join(" ")} ${width-padding},${height-padding}`;
+    return `<div class="line-chart-wrap"><svg viewBox="0 0 ${width} ${height}" role="img" aria-label="Gráfico de ${area ? 'área' : 'linha'}">
         <line x1="${padding}" y1="${height-padding}" x2="${width-padding}" y2="${height-padding}" class="chart-axis"/>
+        ${area ? `<polygon points="${areaPoints}" class="chart-area"/>` : ""}
         <polyline points="${points.map(p => `${p.x},${p.y}`).join(" ")}" class="chart-line"/>
         ${points.map(p => `<circle cx="${p.x}" cy="${p.y}" r="6"><title>${escapeDashboardHTML(p.label)}: ${formatDashboardMetric(p.value,isCurrency)}</title></circle>`).join("")}
     </svg><div class="line-labels">${points.map(p => `<span title="${escapeDashboardHTML(p.label)}">${escapeDashboardHTML(p.label)}</span>`).join("")}</div></div>`;
 }
 
-function buildPieChart(data, isCurrency) {
+function buildPieChart(data, isCurrency, doughnut = false) {
     const positive = data.map(item => ({...item, value: Math.max(0, item.value)}));
     const total = positive.reduce((sum, item) => sum + item.value, 0) || 1;
     const colors = ["#635bff","#00b8a9","#f59e0b","#ef4444","#3b82f6","#8b5cf6","#14b8a6","#f97316","#84cc16","#ec4899","#06b6d4","#64748b"];
@@ -334,8 +359,15 @@ function buildPieChart(data, isCurrency) {
         const start = cursor; cursor += item.value / total * 360;
         return `${colors[index % colors.length]} ${start}deg ${cursor}deg`;
     });
-    return `<div class="pie-layout"><div class="pie-visual" style="background:conic-gradient(${stops.join(",")})"><span>${formatDashboardNumber(data.length)}</span><small>categorias</small></div>
+    return `<div class="pie-layout"><div class="pie-visual ${doughnut ? 'doughnut' : 'solid-pie'}" style="background:conic-gradient(${stops.join(",")})"><div><span>${formatDashboardNumber(data.length)}</span><small>categorias</small></div></div>
         <div class="pie-legend">${data.map((item,index)=>`<div><i style="background:${colors[index%colors.length]}"></i><span>${escapeDashboardHTML(item.label)}</span><strong>${formatDashboardMetric(item.value,isCurrency)}</strong></div>`).join("")}</div></div>`;
+}
+
+function build3DBarChart(data, isCurrency) {
+    const max = Math.max(...data.map(item=>Math.abs(item.value)),1);
+    return `<div class="bar3d-stage">${data.map((item,index)=>`
+        <div class="bar3d-item"><strong>${formatDashboardMetric(item.value,isCurrency)}</strong><div class="bar3d" style="height:${Math.max(12,Math.abs(item.value)/max*210)}px;--bar-index:${index}"><span class="front"></span><span class="side"></span><span class="top"></span></div><small title="${escapeDashboardHTML(item.label)}">${escapeDashboardHTML(item.label)}</small></div>
+    `).join("")}</div>`;
 }
 
 function isCurrencyMetric(metric) {
