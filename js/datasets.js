@@ -1,4 +1,4 @@
-let pendingCSV = null;
+let pendingImport = null;
 
 document.addEventListener("DOMContentLoaded", () => {
     renderDatasets();
@@ -28,7 +28,7 @@ function renderDatasets() {
                     </p>
 
                     <small class="text-muted">
-                        Importe um CSV para começar a análise.
+                        Importe um CSV ou Excel para começar a análise.
                     </small>
                 </td>
             </tr>
@@ -91,7 +91,7 @@ function initDatasetCreation() {
 
         if (!file) return;
 
-        analyzeCSV(file);
+        analyzeFile(file);
     });
 
     createButton.addEventListener("click", saveImportedDataset);
@@ -101,7 +101,7 @@ function initDatasetCreation() {
             Swal.fire({
                 icon: "info",
                 title: "Modo manual",
-                text: "A importação CSV já está disponível. O editor manual será conectado ao mesmo analisador na próxima etapa."
+                text: "A importação de CSV e Excel já está disponível. O editor manual será conectado ao mesmo analisador na próxima etapa."
             });
         });
     }
@@ -110,17 +110,28 @@ function initDatasetCreation() {
 }
 
 
-function analyzeCSV(file) {
+function analyzeFile(file) {
     const status = document.getElementById("importStatus");
     const createButton = document.getElementById("createDataset");
+    const extension = file.name.split(".").pop().toLowerCase();
 
-    if (!file.name.toLowerCase().endsWith(".csv")) {
-        showImportError("Selecione um arquivo CSV válido.");
+    if (!["csv", "xlsx", "xls"].includes(extension)) {
+        showImportError("Selecione um arquivo CSV ou Excel válido (.csv, .xlsx ou .xls). ");
         return;
     }
 
     status.textContent = "Lendo e analisando o arquivo...";
     createButton.disabled = true;
+
+    if (extension === "csv") {
+        analyzeCSV(file);
+    } else {
+        analyzeExcel(file);
+    }
+}
+
+
+function analyzeCSV(file) {
 
     Papa.parse(file, {
         header: true,
@@ -147,31 +158,91 @@ function analyzeCSV(file) {
                 return;
             }
 
-            pendingCSV = {
+            finishFileAnalysis(file, {
+                format: "csv",
                 fileName: file.name,
                 fileSize: file.size,
                 ...normalized
-            };
-
-            renderCSVAnalysis(pendingCSV);
-
-            status.innerHTML = `
-                <i class="bi bi-check-circle-fill text-success me-1"></i>
-                Arquivo analisado com sucesso.
-            `;
-
-            createButton.disabled = false;
-
-            const nameInput = document.getElementById("datasetName");
-
-            if (!nameInput.value.trim()) {
-                nameInput.value = file.name.replace(/\.csv$/i, "");
-            }
+            });
         },
         error: error => {
             showImportError("Não foi possível ler o arquivo: " + error.message);
         }
     });
+}
+
+
+function analyzeExcel(file) {
+    if (typeof XLSX === "undefined") {
+        showImportError("O leitor de Excel não pôde ser carregado. Verifique sua conexão e tente novamente.");
+        return;
+    }
+
+    const reader = new FileReader();
+
+    reader.onload = event => {
+        try {
+            const workbook = XLSX.read(event.target.result, {
+                type: "array",
+                cellDates: true
+            });
+
+            const sheetName = workbook.SheetNames[0];
+
+            if (!sheetName) {
+                showImportError("A planilha não possui nenhuma aba para análise.");
+                return;
+            }
+
+            const matrix = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], {
+                header: 1,
+                defval: "",
+                raw: false,
+                blankrows: false
+            });
+
+            const normalized = normalizeTableMatrix(matrix, `Planilha: ${sheetName}`);
+
+            if (!normalized.rows.length) {
+                showImportError("A primeira aba da planilha não possui registros válidos.");
+                return;
+            }
+
+            finishFileAnalysis(file, {
+                format: "excel",
+                fileName: file.name,
+                fileSize: file.size,
+                sheetName,
+                ...normalized
+            });
+        } catch (error) {
+            showImportError("Não foi possível ler a planilha: " + error.message);
+        }
+    };
+
+    reader.onerror = () => showImportError("Não foi possível acessar o arquivo selecionado.");
+    reader.readAsArrayBuffer(file);
+}
+
+
+function finishFileAnalysis(file, dataset) {
+    const status = document.getElementById("importStatus");
+    const createButton = document.getElementById("createDataset");
+    const nameInput = document.getElementById("datasetName");
+
+    pendingImport = dataset;
+    renderCSVAnalysis(pendingImport);
+
+    status.innerHTML = `
+        <i class="bi bi-check-circle-fill text-success me-1"></i>
+        Arquivo analisado com sucesso.
+    `;
+
+    createButton.disabled = false;
+
+    if (!nameInput.value.trim()) {
+        nameInput.value = file.name.replace(/\.(csv|xlsx|xls)$/i, "");
+    }
 }
 
 
@@ -210,6 +281,62 @@ function normalizeParsedCSV(results) {
         rows,
         columns,
         delimiter: detectDelimiter(results.meta?.delimiter),
+        analysis: {
+            totalRows: rows.length,
+            totalColumns: headers.length,
+            numericColumns: columns.filter(column => column.type === "number").length,
+            dateColumns: columns.filter(column => column.type === "date").length,
+            textColumns: columns.filter(column => column.type === "text").length,
+            missingCells: columns.reduce((total, column) => total + column.missing, 0),
+            duplicateRows: countDuplicateRows(rows, headers)
+        }
+    };
+}
+
+
+function normalizeTableMatrix(matrix, sourceLabel) {
+    const meaningfulRows = (Array.isArray(matrix) ? matrix : [])
+        .filter(row => Array.isArray(row) && row.some(value => String(value ?? "").trim() !== ""));
+
+    if (meaningfulRows.length < 2) {
+        return buildNormalizedDataset([], [], sourceLabel);
+    }
+
+    const width = Math.max(...meaningfulRows.map(row => row.length));
+    const headers = makeUniqueHeaders(
+        Array.from({ length: width }, (_, index) => meaningfulRows[0][index])
+    );
+
+    const rows = meaningfulRows.slice(1)
+        .map(row => Object.fromEntries(
+            headers.map((header, index) => [header, cleanCellValue(row[index])])
+        ))
+        .filter(row => headers.some(header => row[header] !== ""));
+
+    return buildNormalizedDataset(headers, rows, sourceLabel);
+}
+
+
+function makeUniqueHeaders(values) {
+    const occurrences = new Map();
+
+    return values.map((value, index) => {
+        const base = cleanCellValue(value) || `Coluna ${index + 1}`;
+        const count = (occurrences.get(base) || 0) + 1;
+        occurrences.set(base, count);
+        return count === 1 ? base : `${base} (${count})`;
+    });
+}
+
+
+function buildNormalizedDataset(headers, rows, sourceLabel) {
+    const columns = headers.map(header => analyzeColumn(header, rows));
+
+    return {
+        headers,
+        rows,
+        columns,
+        delimiter: sourceLabel,
         analysis: {
             totalRows: rows.length,
             totalColumns: headers.length,
@@ -275,6 +402,21 @@ function isDateValue(value) {
 
     if (!/[-/]/.test(text)) return false;
 
+    const brazilianDate = text.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2}|\d{4})$/);
+
+    if (brazilianDate) {
+        const day = Number(brazilianDate[1]);
+        const month = Number(brazilianDate[2]);
+        const year = Number(brazilianDate[3].length === 2
+            ? `20${brazilianDate[3]}`
+            : brazilianDate[3]);
+        const date = new Date(year, month - 1, day);
+
+        return date.getFullYear() === year
+            && date.getMonth() === month - 1
+            && date.getDate() === day;
+    }
+
     const parsed = Date.parse(text);
 
     return !Number.isNaN(parsed);
@@ -337,18 +479,18 @@ function renderCSVAnalysis(dataset) {
         fileInfo.innerHTML = `
             <div class="dataset-file-card">
                 <div class="dataset-file-icon">
-                    <i class="bi bi-filetype-csv"></i>
+                    <i class="bi bi-file-earmark-spreadsheet"></i>
                 </div>
 
                 <div class="flex-grow-1">
                     <strong>${escapeHTML(dataset.fileName)}</strong>
                     <small>
-                        ${formatBytes(dataset.fileSize)} · ${dataset.delimiter}
+                        ${formatBytes(dataset.fileSize)} · ${escapeHTML(dataset.delimiter)}
                     </small>
                 </div>
 
                 <span class="badge rounded-pill text-bg-success">
-                    CSV válido
+                    ${dataset.format === "excel" ? "Excel válido" : "CSV válido"}
                 </span>
             </div>
         `;
@@ -422,8 +564,8 @@ function renderPreview(dataset) {
 ========================= */
 
 function saveImportedDataset() {
-    if (!pendingCSV) {
-        showImportError("Importe e analise um CSV antes de continuar.");
+    if (!pendingImport) {
+        showImportError("Importe e analise um arquivo CSV ou Excel antes de continuar.");
         return;
     }
 
@@ -442,15 +584,16 @@ function saveImportedDataset() {
     const dataset = addDataset({
         name,
         description,
-        source: "csv",
-        fileName: pendingCSV.fileName,
-        delimiter: pendingCSV.delimiter,
-        rows: pendingCSV.analysis.totalRows,
-        columns: pendingCSV.analysis.totalColumns,
-        headers: pendingCSV.headers,
-        data: pendingCSV.rows,
-        columnAnalysis: pendingCSV.columns,
-        analysis: pendingCSV.analysis
+        source: pendingImport.format,
+        fileName: pendingImport.fileName,
+        delimiter: pendingImport.delimiter,
+        sheetName: pendingImport.sheetName || null,
+        rows: pendingImport.analysis.totalRows,
+        columns: pendingImport.analysis.totalColumns,
+        headers: pendingImport.headers,
+        data: pendingImport.rows,
+        columnAnalysis: pendingImport.columns,
+        analysis: pendingImport.analysis
     });
 
     const modalElement = document.getElementById("datasetModal");
@@ -462,7 +605,7 @@ function saveImportedDataset() {
 
     Swal.fire({
         icon: "success",
-        title: "CSV importado!",
+        title: pendingImport.format === "excel" ? "Excel importado!" : "CSV importado!",
         html: `
             <strong>${formatNumber(dataset.rows)}</strong> registros e
             <strong>${formatNumber(dataset.columns)}</strong> colunas foram analisados.
@@ -500,7 +643,7 @@ function removeDataset(id) {
 ========================= */
 
 function resetDatasetModal() {
-    pendingCSV = null;
+    pendingImport = null;
 
     const name = document.getElementById("datasetName");
     const description = document.getElementById("datasetDescription");
@@ -528,7 +671,7 @@ function resetDatasetModal() {
 
 
 function showImportError(message) {
-    pendingCSV = null;
+    pendingImport = null;
 
     const createButton = document.getElementById("createDataset");
     const status = document.getElementById("importStatus");
