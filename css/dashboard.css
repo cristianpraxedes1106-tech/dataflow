@@ -1,4 +1,269 @@
-/* Estrutura visual dos módulos de análise. Conteúdo de dashboards antigos removido. */
+/* =========================
+   DATAFLOW — APP / DASHBOARD
+========================= */
+
+.dashboard-body {
+    min-height: 100vh;
+    background:
+        radial-gradient(circle at 85% 5%, rgba(99,91,255,.07), transparent 28%),
+        var(--background);
+}
+
+.dashboard-wrapper {
+    min-height: 100vh;
+    display: flex;
+}
+
+.sidebar {
+    position: fixed;
+    inset: 0 auto 0 0;
+    z-index: 20;
+    width: 250px;
+    display: flex;
+    flex-direction: column;
+    padding: 24px 16px;
+    background: rgba(255,255,255,.92);
+    border-right: 1px solid var(--border);
+    backdrop-filter: blur(18px);
+}
+
+.sidebar-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 10px 28px;
+    color: var(--text);
+    font-size: 19px;
+    font-weight: 800;
+}
+
+.sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.sidebar-label {
+    margin: 8px 10px 8px;
+    color: #9ca3af;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 1.4px;
+}
+
+.sidebar-link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 44px;
+    padding: 10px 12px;
+    border-radius: 11px;
+    color: var(--text-muted);
+    font-size: 13px;
+    font-weight: 600;
+    transition: .2s ease;
+}
+
+.sidebar-link i {
+    width: 20px;
+    text-align: center;
+    font-size: 16px;
+}
+
+.sidebar-link:hover {
+    color: var(--primary);
+    background: rgba(99,91,255,.06);
+}
+
+.sidebar-link.active {
+    color: var(--primary);
+    background: rgba(99,91,255,.10);
+}
+
+.dashboard-main {
+    width: calc(100% - 250px);
+    min-height: 100vh;
+    margin-left: 250px;
+    padding: 42px 44px;
+}
+
+.dashboard-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 24px;
+    margin-bottom: 28px;
+}
+
+.page-overline {
+    display: block;
+    margin-bottom: 8px;
+    color: var(--primary);
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 1.8px;
+}
+
+.dashboard-header h1 {
+    margin: 0;
+    color: var(--text);
+    font-size: clamp(28px, 3vw, 38px);
+    font-weight: 800;
+    letter-spacing: -1.5px;
+}
+
+.dashboard-header p {
+    margin: 8px 0 0;
+    color: var(--text-muted);
+    font-size: 14px;
+}
+
+.dashboard-card {
+    overflow: hidden;
+    background: rgba(255,255,255,.94);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+}
+
+.dataflow-table {
+    margin: 0;
+    color: var(--text);
+}
+
+.dataflow-table thead th {
+    padding: 15px 18px;
+    color: #7b8494;
+    background: #fafbfc;
+    border-bottom: 1px solid var(--border);
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    white-space: nowrap;
+}
+
+.dataflow-table tbody td {
+    padding: 16px 18px;
+    border-color: var(--border);
+    vertical-align: middle;
+    font-size: 13px;
+}
+
+.dataflow-table tbody tr:last-child td {
+    border-bottom: 0;
+}
+
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 9px;
+    border-radius: 8px;
+    color: #15803d;
+    background: rgba(34,197,94,.09);
+    font-size: 10px;
+    font-weight: 700;
+}
+
+.icon-button {
+    width: 34px;
+    height: 34px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 0;
+    border-radius: 9px;
+    color: #94a3b8;
+    background: transparent;
+    transition: .2s ease;
+}
+
+.icon-button:hover {
+    color: var(--danger);
+    background: rgba(239,68,68,.08);
+}
+
+.dashboard-main .text-muted {
+    color: var(--text-muted) !important;
+}
+
+/* IMPORTAÇÃO */
+
+.dataset-import-options {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.import-option {
+    min-height: 118px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 5px;
+    padding: 16px;
+    color: var(--text);
+    background: #fafbfe;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    cursor: pointer;
+    text-align: left;
+    transition: .2s ease;
+}
+
+.import-option:hover {
+    border-color: rgba(99,91,255,.4);
+    background: rgba(99,91,255,.035);
+    transform: translateY(-1px);
+}
+
+.import-option > i {
+    margin-bottom: 4px;
+    color: var(--primary);
+    font-size: 22px;
+}
+
+.import-option strong {
+    font-size: 12px;
+}
+
+.import-option small {
+    color: var(--text-muted);
+    font-size: 10px;
+    line-height: 1.45;
+}
+
+.form-label {
+    color: var(--text);
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.form-control {
+    border-color: var(--border);
+    border-radius: 10px;
+    padding: 10px 12px;
+    color: var(--text);
+    font-size: 13px;
+    box-shadow: none !important;
+}
+
+.form-control:focus {
+    border-color: rgba(99,91,255,.55);
+}
+
+.dataflow-modal .modal-header,
+.dataflow-modal .modal-footer {
+    padding: 18px 22px;
+    border-color: var(--border);
+}
+
+.dataflow-modal .modal-body {
+    padding: 22px;
+}
+
+/* ESTADOS VAZIOS */
 
 .dashboard-workspace {
     min-height: 420px;
@@ -13,7 +278,8 @@
     text-align: center;
     background: #fff;
     border: 1px solid var(--border);
-    border-radius: var(--radius, 18px);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
 }
 
 .empty-state > i {
@@ -33,4 +299,46 @@
     margin: 0 auto 24px;
     color: var(--text-muted);
     font-size: 13px;
+}
+
+@media (max-width: 900px) {
+    .sidebar {
+        position: static;
+        width: 100%;
+        min-height: auto;
+    }
+
+    .dashboard-wrapper {
+        display: block;
+    }
+
+    .dashboard-main {
+        width: 100%;
+        margin-left: 0;
+        padding: 28px 20px;
+    }
+
+    .sidebar-nav {
+        flex-direction: row;
+        overflow-x: auto;
+    }
+
+    .sidebar-label {
+        display: none;
+    }
+
+    .sidebar-link {
+        white-space: nowrap;
+    }
+
+    .dashboard-header {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+}
+
+@media (max-width: 600px) {
+    .dataset-import-options {
+        grid-template-columns: 1fr;
+    }
 }
