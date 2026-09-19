@@ -18,7 +18,7 @@
 
 <div class="dashboard-wrapper">
 
-    <aside class="sidebar">
+    <aside class="sidebar" id="sidebar">
         <div class="sidebar-brand">
             <div class="brand-icon">
                 <i class="bi bi-bar-chart-fill"></i>
@@ -29,15 +29,35 @@
         <nav class="sidebar-nav">
             <span class="sidebar-label">ANÁLISE</span>
 
-            <a href="datasets.html" class="sidebar-link active">
+            <a href="datasets.html" class="sidebar-link active" aria-current="page">
                 <i class="bi bi-database-fill"></i>
                 <span>Meus dados</span>
             </a>
+            <a href="dashboard.html" class="sidebar-link">
+                <i class="bi bi-grid-1x2-fill"></i>
+                <span>Dashboard</span>
+            </a>
+            <a href="comparison.html" class="sidebar-link">
+                <i class="bi bi-arrow-left-right"></i>
+                <span>Comparação</span>
+            </a>
+            <a href="reports.html" class="sidebar-link">
+                <i class="bi bi-file-earmark-bar-graph-fill"></i>
+                <span>Relatórios</span>
+            </a>
+        </nav>
 
-            </nav>
+        <a href="index.html" class="sidebar-link sidebar-home">
+            <i class="bi bi-house-door"></i>
+            <span>Página inicial</span>
+        </a>
     </aside>
 
     <main class="dashboard-main">
+
+        <button class="sidebar-toggle" id="sidebarToggle" type="button" aria-label="Abrir menu">
+            <i class="bi bi-list"></i>
+        </button>
 
         <header class="dashboard-header">
             <div>
