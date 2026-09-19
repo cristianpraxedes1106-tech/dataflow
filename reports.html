@@ -33,17 +33,28 @@
                 <h1>Relatórios</h1>
                 <p>Gere e consulte relatórios a partir das suas análises.</p>
             </div>
+            <button id="printReportButton" class="btn btn-primary-custom d-none"><i class="bi bi-printer"></i> Imprimir / salvar PDF</button>
         </header>
         <section id="reportsWorkspace" class="dashboard-workspace">
-            <div class="empty-state">
+            <div id="reportsEmpty" class="empty-state d-none">
                 <i class="bi bi-file-earmark-bar-graph"></i>
-                <h2>Nenhum relatório disponível</h2>
-                <p>Os relatórios serão disponibilizados depois que uma análise for configurada.</p>
-                <a href="datasets.html" class="btn btn-primary-custom">Importar dados</a>
+                <h2>Configure o Dashboard primeiro</h2>
+                <p>Selecione um conjunto, uma categoria e uma métrica para gerar o relatório.</p>
+                <a href="dashboard.html" class="btn btn-primary-custom">Configurar Dashboard</a>
             </div>
+            <article id="reportDocument" class="report-document d-none">
+                <header class="report-header"><div><span>DATAFLOW</span><h1>Relatório de análise</h1><p id="reportGeneratedAt"></p></div><div class="report-brand-icon"><i class="bi bi-bar-chart-fill"></i></div></header>
+                <section class="report-context"><div><small>Conjunto</small><strong id="reportDatasetName"></strong></div><div><small>Categoria</small><strong id="reportCategory"></strong></div><div><small>Métrica</small><strong id="reportMetric"></strong></div></section>
+                <section id="reportKpis" class="report-kpis"></section>
+                <section class="report-table-section"><h2>Resultados por categoria</h2><div class="table-responsive"><table class="table dataflow-table"><thead><tr><th>Categoria</th><th>Valor</th><th>Participação</th></tr></thead><tbody id="reportTableBody"></tbody></table></div></section>
+                <footer class="report-footer">Relatório gerado localmente pelo DataFlow.</footer>
+            </article>
         </section>
     </main>
 </div>
+<script src="js/storage.js"></script>
+<script src="js/analytics.js"></script>
+<script src="js/insights.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>
