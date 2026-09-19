@@ -83,7 +83,58 @@
 
                     <div class="next-step-note">
                         <i class="bi bi-info-circle"></i>
-                        <span>Na próxima etapa, você poderá escolher as colunas que deseja analisar.</span>
+                        <span>Agora escolha abaixo quais colunas serão usadas na análise.</span>
+                    </div>
+                </section>
+
+                <section id="columnSelectionPanel" class="column-selection-panel d-none" aria-live="polite">
+                    <div class="column-selection-heading">
+                        <div>
+                            <span class="selection-step">ETAPA 2</span>
+                            <h2>Escolha as colunas da análise</h2>
+                            <p>Defina como os dados serão agrupados e qual valor será calculado.</p>
+                        </div>
+                        <span id="columnSelectionStatus" class="column-selection-status">
+                            <i class="bi bi-circle"></i>
+                            Selecione as duas colunas
+                        </span>
+                    </div>
+
+                    <div class="column-selection-grid">
+                        <div class="column-field-card">
+                            <div class="column-field-icon category"><i class="bi bi-tags"></i></div>
+                            <div class="column-field-copy">
+                                <label for="categoryColumnSelect">Categoria ou período</label>
+                                <small>Coluna usada para agrupar os resultados, como região, produto ou data.</small>
+                            </div>
+                            <select class="form-select" id="categoryColumnSelect">
+                                <option value="">Selecione uma coluna</option>
+                            </select>
+                        </div>
+
+                        <div class="column-field-card">
+                            <div class="column-field-icon metric"><i class="bi bi-123"></i></div>
+                            <div class="column-field-copy">
+                                <label for="metricColumnSelect">Métrica numérica</label>
+                                <small>Coluna usada nos cálculos, como quantidade, valor ou prazo.</small>
+                            </div>
+                            <select class="form-select" id="metricColumnSelect">
+                                <option value="">Selecione uma coluna numérica</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div id="columnSelectionWarning" class="column-selection-warning d-none">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        <span></span>
+                    </div>
+
+                    <div id="columnSelectionReady" class="column-selection-ready d-none">
+                        <i class="bi bi-check-circle-fill"></i>
+                        <div>
+                            <strong>Configuração salva</strong>
+                            <span id="columnSelectionSummary"></span>
+                        </div>
                     </div>
                 </section>
             </div>
