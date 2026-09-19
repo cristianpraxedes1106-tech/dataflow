@@ -35,15 +35,36 @@
             </div>
         </header>
         <section id="comparisonWorkspace" class="dashboard-workspace">
-            <div class="empty-state">
+            <div id="comparisonEmpty" class="empty-state d-none">
                 <i class="bi bi-arrow-left-right"></i>
-                <h2>Nenhuma comparação configurada</h2>
-                <p>Importe os dados que deseja comparar para começar.</p>
+                <h2>São necessários dois conjuntos</h2>
+                <p>Importe pelo menos dois conjuntos de dados para realizar uma comparação.</p>
                 <a href="datasets.html" class="btn btn-primary-custom">Ir para meus dados</a>
+            </div>
+            <div id="comparisonPanel" class="comparison-panel d-none">
+                <section class="dashboard-card comparison-config">
+                    <div><span class="selection-step">ETAPA 5</span><h2>Configure a comparação</h2><p>Escolha dois conjuntos e uma métrica numérica de cada um.</p></div>
+                    <div class="comparison-select-grid">
+                        <label>Conjunto A<select id="comparisonDatasetA" class="form-select"></select></label>
+                        <label>Métrica A<select id="comparisonMetricA" class="form-select"></select></label>
+                        <label>Conjunto B<select id="comparisonDatasetB" class="form-select"></select></label>
+                        <label>Métrica B<select id="comparisonMetricB" class="form-select"></select></label>
+                    </div>
+                </section>
+                <section id="comparisonResult" class="comparison-result d-none">
+                    <div id="comparisonCards" class="comparison-cards"></div>
+                    <div class="dashboard-card comparison-table-card">
+                        <h2>Resumo comparativo</h2>
+                        <div class="table-responsive"><table class="table dataflow-table"><thead><tr><th>Indicador</th><th id="comparisonNameA">A</th><th id="comparisonNameB">B</th><th>Diferença B − A</th></tr></thead><tbody id="comparisonTableBody"></tbody></table></div>
+                    </div>
+                </section>
             </div>
         </section>
     </main>
 </div>
+<script src="js/storage.js"></script>
+<script src="js/analytics.js"></script>
+<script src="js/comparison.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>

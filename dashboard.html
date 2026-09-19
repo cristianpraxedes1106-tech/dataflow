@@ -137,6 +137,43 @@
                         </div>
                     </div>
                 </section>
+
+                <section id="dashboardAnalytics" class="dashboard-analytics d-none" aria-live="polite">
+                    <div class="analytics-heading">
+                        <div>
+                            <span class="selection-step">ETAPA 3</span>
+                            <h2>Indicadores da métrica</h2>
+                            <p id="analyticsSubtitle"></p>
+                        </div>
+                    </div>
+
+                    <div class="kpi-grid">
+                        <article class="kpi-card"><span>Registros válidos</span><strong id="kpiCount">0</strong><i class="bi bi-list-check"></i></article>
+                        <article class="kpi-card"><span>Total</span><strong id="kpiTotal">0</strong><i class="bi bi-calculator"></i></article>
+                        <article class="kpi-card"><span>Média</span><strong id="kpiAverage">0</strong><i class="bi bi-activity"></i></article>
+                        <article class="kpi-card"><span>Mínimo</span><strong id="kpiMin">0</strong><i class="bi bi-arrow-down"></i></article>
+                        <article class="kpi-card"><span>Máximo</span><strong id="kpiMax">0</strong><i class="bi bi-arrow-up"></i></article>
+                    </div>
+
+                    <div class="chart-card">
+                        <div class="chart-card-header">
+                            <div>
+                                <span class="selection-step">ETAPA 4</span>
+                                <h2 id="chartTitle">Visualização por categoria</h2>
+                            </div>
+                            <label class="chart-type-control">
+                                <span>Tipo de gráfico</span>
+                                <select id="chartTypeSelect" class="form-select">
+                                    <option value="bar">Barras</option>
+                                    <option value="line">Linha</option>
+                                    <option value="pie">Pizza</option>
+                                </select>
+                            </label>
+                        </div>
+                        <div id="analyticsChart" class="analytics-chart"></div>
+                        <p id="chartFootnote" class="chart-footnote"></p>
+                    </div>
+                </section>
             </div>
         </section>
     </main>

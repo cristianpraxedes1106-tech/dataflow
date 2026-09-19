@@ -77,6 +77,7 @@ function hideSelectedDataset() {
     activeDashboardDataset = null;
     document.getElementById("selectedDatasetSummary")?.classList.add("d-none");
     document.getElementById("columnSelectionPanel")?.classList.add("d-none");
+    document.getElementById("dashboardAnalytics")?.classList.add("d-none");
 }
 
 function renderColumnSelection(dataset) {
@@ -203,11 +204,148 @@ function updateColumnSelectionState() {
         status.innerHTML = '<i class="bi bi-check-circle-fill"></i> Colunas definidas';
         setDashboardText("columnSelectionSummary", `${metric} será analisado por ${category}.`);
         ready.classList.remove("d-none");
+        renderDashboardAnalytics(category, metric);
     } else {
         status.classList.remove("ready");
         status.innerHTML = '<i class="bi bi-circle"></i> Selecione as duas colunas';
         ready.classList.add("d-none");
+        document.getElementById("dashboardAnalytics")?.classList.add("d-none");
     }
+}
+
+function renderDashboardAnalytics(category, metric) {
+    const panel = document.getElementById("dashboardAnalytics");
+    const rows = Array.isArray(activeDashboardDataset?.data) ? activeDashboardDataset.data : [];
+    const values = rows.map(row => parseDashboardNumber(row?.[metric])).filter(Number.isFinite);
+
+    if (!panel || !values.length) {
+        panel?.classList.add("d-none");
+        return;
+    }
+
+    const total = values.reduce((sum, value) => sum + value, 0);
+    const stats = {
+        count: values.length,
+        total,
+        average: total / values.length,
+        min: Math.min(...values),
+        max: Math.max(...values)
+    };
+    const isCurrency = isCurrencyMetric(metric);
+
+    setDashboardText("analyticsSubtitle", `${metric} analisado por ${category}.`);
+    setDashboardText("kpiCount", formatDashboardNumber(stats.count));
+    setDashboardText("kpiTotal", formatDashboardMetric(stats.total, isCurrency));
+    setDashboardText("kpiAverage", formatDashboardMetric(stats.average, isCurrency));
+    setDashboardText("kpiMin", formatDashboardMetric(stats.min, isCurrency));
+    setDashboardText("kpiMax", formatDashboardMetric(stats.max, isCurrency));
+    setDashboardText("chartTitle", `${metric} por ${category}`);
+
+    const grouped = aggregateDashboardRows(rows, category, metric);
+    const chartType = document.getElementById("chartTypeSelect");
+    chartType.onchange = () => renderAnalyticsChart(grouped, chartType.value, isCurrency);
+    renderAnalyticsChart(grouped, chartType.value, isCurrency);
+    panel.classList.remove("d-none");
+}
+
+function parseDashboardNumber(value) {
+    const normalized = String(value ?? "")
+        .trim()
+        .replace(/R\$\s?/gi, "")
+        .replace(/\s/g, "")
+        .replace(/\.(?=\d{3}(?:\D|$))/g, "")
+        .replace(",", ".");
+    const number = Number(normalized);
+    return normalized !== "" && Number.isFinite(number) ? number : NaN;
+}
+
+function aggregateDashboardRows(rows, category, metric) {
+    const groups = new Map();
+
+    rows.forEach(row => {
+        const label = String(row?.[category] ?? "").trim() || "Sem categoria";
+        const value = parseDashboardNumber(row?.[metric]);
+        if (Number.isFinite(value)) groups.set(label, (groups.get(label) || 0) + value);
+    });
+
+    return [...groups.entries()]
+        .map(([label, value]) => ({ label, value }))
+        .sort((a, b) => b.value - a.value)
+        .slice(0, 12);
+}
+
+function renderAnalyticsChart(data, type, isCurrency) {
+    const chart = document.getElementById("analyticsChart");
+    const footnote = document.getElementById("chartFootnote");
+    if (!chart) return;
+
+    if (!data.length) {
+        chart.innerHTML = '<div class="chart-empty">Não há dados suficientes para o gráfico.</div>';
+        return;
+    }
+
+    chart.className = `analytics-chart chart-${type}`;
+    chart.innerHTML = type === "line"
+        ? buildLineChart(data, isCurrency)
+        : type === "pie"
+            ? buildPieChart(data, isCurrency)
+            : buildBarChart(data, isCurrency);
+
+    if (footnote) {
+        footnote.textContent = data.length === 12
+            ? "Exibindo as 12 categorias com maiores valores."
+            : `Exibindo ${data.length} categoria${data.length === 1 ? "" : "s"}.`;
+    }
+}
+
+function buildBarChart(data, isCurrency) {
+    const max = Math.max(...data.map(item => Math.abs(item.value)), 1);
+    return `<div class="bar-chart">${data.map((item, index) => `
+        <div class="bar-row">
+            <span class="bar-label" title="${escapeDashboardHTML(item.label)}">${escapeDashboardHTML(item.label)}</span>
+            <div class="bar-track"><span style="width:${Math.max(2, Math.abs(item.value) / max * 100)}%;--bar-index:${index}"></span></div>
+            <strong>${formatDashboardMetric(item.value, isCurrency)}</strong>
+        </div>`).join("")}</div>`;
+}
+
+function buildLineChart(data, isCurrency) {
+    const width = 900, height = 300, padding = 34;
+    const max = Math.max(...data.map(item => item.value), 1);
+    const min = Math.min(...data.map(item => item.value), 0);
+    const span = max - min || 1;
+    const points = data.map((item, index) => {
+        const x = padding + index * ((width - padding * 2) / Math.max(data.length - 1, 1));
+        const y = height - padding - ((item.value - min) / span) * (height - padding * 2);
+        return { ...item, x, y };
+    });
+    return `<div class="line-chart-wrap"><svg viewBox="0 0 ${width} ${height}" role="img" aria-label="Gráfico de linha">
+        <line x1="${padding}" y1="${height-padding}" x2="${width-padding}" y2="${height-padding}" class="chart-axis"/>
+        <polyline points="${points.map(p => `${p.x},${p.y}`).join(" ")}" class="chart-line"/>
+        ${points.map(p => `<circle cx="${p.x}" cy="${p.y}" r="6"><title>${escapeDashboardHTML(p.label)}: ${formatDashboardMetric(p.value,isCurrency)}</title></circle>`).join("")}
+    </svg><div class="line-labels">${points.map(p => `<span title="${escapeDashboardHTML(p.label)}">${escapeDashboardHTML(p.label)}</span>`).join("")}</div></div>`;
+}
+
+function buildPieChart(data, isCurrency) {
+    const positive = data.map(item => ({...item, value: Math.max(0, item.value)}));
+    const total = positive.reduce((sum, item) => sum + item.value, 0) || 1;
+    const colors = ["#635bff","#00b8a9","#f59e0b","#ef4444","#3b82f6","#8b5cf6","#14b8a6","#f97316","#84cc16","#ec4899","#06b6d4","#64748b"];
+    let cursor = 0;
+    const stops = positive.map((item,index) => {
+        const start = cursor; cursor += item.value / total * 360;
+        return `${colors[index % colors.length]} ${start}deg ${cursor}deg`;
+    });
+    return `<div class="pie-layout"><div class="pie-visual" style="background:conic-gradient(${stops.join(",")})"><span>${formatDashboardNumber(data.length)}</span><small>categorias</small></div>
+        <div class="pie-legend">${data.map((item,index)=>`<div><i style="background:${colors[index%colors.length]}"></i><span>${escapeDashboardHTML(item.label)}</span><strong>${formatDashboardMetric(item.value,isCurrency)}</strong></div>`).join("")}</div></div>`;
+}
+
+function isCurrencyMetric(metric) {
+    return /valor|preço|preco|custo|receita|faturamento|total|frete/i.test(metric);
+}
+
+function formatDashboardMetric(value, currency) {
+    return Number(value || 0).toLocaleString("pt-BR", currency
+        ? { style: "currency", currency: "BRL", maximumFractionDigits: 2 }
+        : { maximumFractionDigits: 2 });
 }
 
 function getSavedColumnConfig(datasetId) {
