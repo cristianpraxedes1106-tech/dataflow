@@ -43,6 +43,25 @@
     gap: 5px;
 }
 
+.sidebar-home {
+    margin-top: auto;
+}
+
+.sidebar-toggle {
+    display: none;
+    width: 42px;
+    height: 42px;
+    margin-bottom: 20px;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--border);
+    border-radius: 11px;
+    color: var(--text);
+    background: #fff;
+    font-size: 22px;
+    box-shadow: var(--shadow);
+}
+
 .sidebar-label {
     margin: 8px 10px 8px;
     color: #9ca3af;
@@ -303,9 +322,14 @@
 
 @media (max-width: 900px) {
     .sidebar {
-        position: static;
-        width: 100%;
-        min-height: auto;
+        width: min(290px, 86vw);
+        transform: translateX(-105%);
+        transition: transform .25s ease;
+        box-shadow: 18px 0 45px rgba(15, 23, 42, .12);
+    }
+
+    .sidebar.open {
+        transform: translateX(0);
     }
 
     .dashboard-wrapper {
@@ -318,17 +342,8 @@
         padding: 28px 20px;
     }
 
-    .sidebar-nav {
-        flex-direction: row;
-        overflow-x: auto;
-    }
-
-    .sidebar-label {
-        display: none;
-    }
-
-    .sidebar-link {
-        white-space: nowrap;
+    .sidebar-toggle {
+        display: inline-flex;
     }
 
     .dashboard-header {
